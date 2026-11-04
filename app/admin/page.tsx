@@ -1,17 +1,25 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-export default async function AdminPage() {
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<p className="p-8">Loading admin data...</p>}>
+      <AdminContent />
+    </Suspense>
+  )
+}
+
+async function AdminContent() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // If not logged in — go to home
   if (!user) {
     redirect('/')
   }
 
-  // Only this email can see the admin page
-  const ADMIN_EMAIL = 'varvara.birjulina@startschool.org'
+
+  const ADMIN_EMAIL = 'varvara.birjulina@startschool.org' 
   
   if (user.email !== ADMIN_EMAIL) {
     return (
@@ -22,7 +30,6 @@ export default async function AdminPage() {
     )
   }
 
-  // Fetch all waitlist entries
   const { data: waitlist } = await supabase
     .from('waitlist')
     .select('*')
