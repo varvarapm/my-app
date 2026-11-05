@@ -10,6 +10,7 @@ export default function Page() {
   const [referrals, setReferrals] = useState(0)
   const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
@@ -53,12 +54,6 @@ export default function Page() {
     window.location.href = '/'
   }
 
-  const handleLeaveWaitlist = () => {
-    if (confirm('Are you sure you want to leave the waitlist?')) {
-      window.location.href = '/leave'
-    }
-  }
-
   if (loading) return <main className="p-8 text-center">Loading...</main>
 
   if (user) {
@@ -89,9 +84,19 @@ export default function Page() {
           Log out
         </button>
 
-        <button onClick={handleLeaveWaitlist} className="mt-4 text-sm text-red-600 hover:underline">
-          Leave the waitlist
-        </button>
+        {!showConfirm ? (
+          <button onClick={() => setShowConfirm(true)} className="mt-4 text-sm text-red-600 hover:underline">
+            Leave the waitlist
+          </button>
+        ) : (
+          <div className="mt-4 p-4 border border-red-300 bg-red-50 rounded-lg text-center max-w-sm w-full">
+            <p className="text-red-800 font-semibold mb-3">Are you sure? This cannot be undone.</p>
+            <div className="flex gap-2 justify-center">
+              <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-gray-200 rounded text-black text-sm">Cancel</button>
+              <button onClick={() => window.location.href = '/leave'} className="px-4 py-2 bg-red-600 rounded text-white text-sm">Yes, leave</button>
+            </div>
+          </div>
+        )}
       </main>
     )
   }
