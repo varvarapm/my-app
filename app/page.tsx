@@ -8,6 +8,7 @@ export default function Page() {
   const [user, setUser] = useState<any>(null)
   const [position, setPosition] = useState<number | null>(null)
   const [referrals, setReferrals] = useState(0)
+  const [referralCode, setReferralCode] = useState('') // <-- Отдельный стейт для кода
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,8 +36,7 @@ export default function Page() {
             .eq('referred_by', currentUser.id)
           
           setReferrals(count || 0)
-          // Сохраняем код в стейт, чтобы показать ссылку
-          user.referralCode = currentUser.referral_code 
+          setReferralCode(currentUser.referral_code || '')
         }
       }
       setLoading(false)
@@ -78,7 +78,7 @@ export default function Page() {
           <input 
             type="text" 
             readOnly 
-            value={`${window.location.origin}/?ref=${user.referralCode || ''}`} 
+            value={`${window.location.origin}/?ref=${referralCode}`} 
             className="mt-2 w-full p-2 border rounded bg-white text-sm text-gray-600 text-center"
           />
           <p className="mt-4 font-semibold text-blue-800">
