@@ -8,7 +8,7 @@ export default function Page() {
   const [user, setUser] = useState<any>(null)
   const [position, setPosition] = useState<number | null>(null)
   const [referrals, setReferrals] = useState(0)
-  const [referralCode, setReferralCode] = useState('') // <-- Отдельный стейт для кода
+  const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,6 +59,25 @@ export default function Page() {
     window.location.href = '/'
   }
 
+  const handleLeaveWaitlist = async () => {
+    if (!confirm('Are you sure you want to leave the waitlist? This cannot be undone.')) return;
+
+    try {
+      const res = await fetch('/api/leave-waitlist', { method: 'DELETE' })
+      if (res.ok) {
+        // Если удаление успешно, принудительно чистим куки и перезагружаем страницу
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/")
+        })
+        window.location.href = '/'
+      } else {
+        alert('Failed to leave waitlist.')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   if (loading) return <main className="p-8 text-center">Loading...</main>
 
   if (user) {
@@ -88,6 +107,11 @@ export default function Page() {
 
         <button onClick={handleLogout} className="mt-8 rounded-lg bg-gray-200 px-6 py-3 text-black hover:bg-gray-300">
           Log out
+        </button>
+
+        {/* Кнопка удаления из waitlist */}
+        <button onClick={handleLeaveWaitlist} className="mt-4 text-sm text-red-600 hover:underline">
+          Leave the waitlist
         </button>
       </main>
     )
