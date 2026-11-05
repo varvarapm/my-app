@@ -32,7 +32,7 @@ export default function Page() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    window.location.reload()
+    window.location.href = '/'
   }
 
   if (user) {

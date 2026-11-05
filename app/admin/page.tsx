@@ -1,101 +1,60 @@
-'use client'
+import { Suspense } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
-import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<p className="p-8">Loading admin data...</p>}>
+      <AdminContent />
+    </Suspense>
+  )
+}
 
-export default function Page() {
-  const supabase = createClient()
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [position, setPosition] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
+async function AdminContent() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      
-      if (user) {
-        const { data, error } = await supabase.rpc('get_waitlist_position')
-        if (!error) {
-          setPosition(data)
-        }
-      }
-      setLoading(false)
-    }
-    getUser()
-  }, [supabase])
-
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
+  if (!user) {
+    redirect('/')
   }
 
-  const handleLogout = async () => {
-    // 1. Sign out from Supabase
-    await supabase.auth.signOut()
-    
-    // 2. Clear local state
-    setUser(null)
-    setPosition(null)
-    
-    // 3. Force a hard redirect to the homepage to clear any cached session
-    window.location.href = '/'
-  }
-
-  if (loading) {
+  const ADMIN_EMAIL = 'varvara.birjulina@startschool.org' 
+  
+  if (user.email !== ADMIN_EMAIL) {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
-        <p>Loading...</p>
+        <h1 className="text-2xl font-bold text-red-600">Not allowed</h1>
       </main>
     )
   }
 
-  if (user) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-8">
-        <h1 className="text-4xl font-bold">You're on the list!</h1>
-        <p className="mt-4 text-lg">Welcome, {user.user_metadata.full_name || user.user_metadata.name || user.email}</p>
-        
-        {user.user_metadata.avatar_url && (
-          <img 
-            src={user.user_metadata.avatar_url} 
-            alt="Profile" 
-            className="mt-4 w-16 h-16 rounded-full" 
-          />
-        )}
-        
-        <p className="text-gray-500">{user.email}</p>
-
-        {position !== null && (
-          <p className="mt-6 text-2xl font-semibold text-blue-600">
-            You're #{position} on the list!
-          </p>
-        )}
-
-        <button 
-          onClick={handleLogout} 
-          className="mt-8 rounded-lg bg-gray-200 px-6 py-3 text-black hover:bg-gray-300 transition-colors"
-        >
-          Log out
-        </button>
-      </main>
-    )
-  }
+  const { data: waitlist } = await supabase
+    .from('waitlist')
+    .select('*')
+    .order('created_at', { ascending: true })
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-4xl font-bold">Email listing</h1>
-      <p className="mt-4 text-lg text-gray-600">Still want to join?</p>
-      <button 
-        onClick={handleGoogleLogin} 
-        className="mt-8 rounded-lg bg-black px-6 py-3 text-white hover:bg-gray-800 transition-colors"
-      >
-        Join with Google
-      </button>
+    <main className="min-h-screen p-8">
+      <h1 className="text-3xl font-bold mb-6">Admin View — Waitlist</h1>
+      <table className="min-w-full border-collapse border border-gray-300">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border p-2 text-left">#</th>
+            <th className="border p-2 text-left">Email</th>
+            <th className="border p-2 text-left">Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          {waitlist?.map((row, index) => (
+            <tr key={row.id}>
+              <td className="border p-2">{index + 1}</td>
+              <td className="border p-2">{row.email}</td>
+              <td className="border p-2">{new Date(row.created_at).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-4 text-gray-500">Total: {waitlist?.length || 0} people</p>
     </main>
   )
 }
