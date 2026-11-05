@@ -21,7 +21,7 @@ export default function Page() {
         const { data: posData } = await supabase.rpc('get_waitlist_position')
         if (posData) setPosition(posData)
 
-        // Получаем данные текущего пользователя (чтобы узнать его referral_code и id)
+        // Получаем данные текущего пользователя
         const { data: currentUser } = await supabase
           .from('waitlist')
           .select('id, referral_code')
@@ -64,17 +64,25 @@ export default function Page() {
 
     try {
       const res = await fetch('/api/leave-waitlist', { method: 'DELETE' })
+      
       if (res.ok) {
-        // Если удаление успешно, принудительно чистим куки и перезагружаем страницу
+        // Если успешно, чистим куки
         document.cookie.split(";").forEach((c) => {
           document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/")
         })
+        
+        // Показываем сообщение об успехе
+        alert('You have been successfully removed from the waitlist.')
+        
+        // Перезагружаем страницу
         window.location.href = '/'
       } else {
-        alert('Failed to leave waitlist.')
+        const data = await res.json()
+        alert(`Error: ${data.error || 'Failed to leave waitlist.'}`)
       }
     } catch (err) {
       console.error(err)
+      alert('An unexpected error occurred.')
     }
   }
 
@@ -109,7 +117,6 @@ export default function Page() {
           Log out
         </button>
 
-        {/* Кнопка удаления из waitlist */}
         <button onClick={handleLeaveWaitlist} className="mt-4 text-sm text-red-600 hover:underline">
           Leave the waitlist
         </button>
